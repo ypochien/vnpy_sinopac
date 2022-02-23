@@ -1,8 +1,11 @@
-# -*- coding: UTF-8 -*-
-'''
-@Project ：vnpy_sinopac 
-@File ：__init__.py.py
-@IDE  ：PyCharm 
-@Author ：ypochien
-@Date ：2022/2/23 下午 04:53 
-'''
+try:
+    from .gateway import SinopacGateway
+except ImportError:
+    pass
+
+import importlib_metadata
+
+try:
+    __version__ = importlib_metadata.version("vnpy_sinopac")
+except importlib_metadata.PackageNotFoundError:
+    __version__ = "dev"
