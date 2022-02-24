@@ -1,3 +1,5 @@
+# -*- coding: UTF-8 -*-
+# author: ypochien
 from copy import copy
 from datetime import datetime
 from typing import Dict
@@ -5,20 +7,21 @@ from typing import Dict
 import pytz
 from shioaji import Shioaji
 from shioaji.account import StockAccount, FutureAccount
-from shioaji import TickFOPv1
-from vnpy.trader.constant import Exchange,Product, OptionType
+from vnpy.trader.constant import Exchange, Product, OptionType
 from vnpy.trader.gateway import BaseGateway
 from vnpy.trader.object import (
     ContractData,
     OrderRequest,
     CancelRequest,
-    SubscribeRequest, TickData,
+    SubscribeRequest,
+    TickData,
 )
 
 TW_TZ = pytz.timezone("Asia/Taipei")
 
 EXCHANGE_VT2SINOPAC = {Exchange.LOCAL: "LOCAL"}
 EXCHANGE_SINOPAC2VT = {v: k for k, v in EXCHANGE_VT2SINOPAC.items()}
+
 
 class SinopacGateway(BaseGateway):
     """
@@ -47,74 +50,114 @@ class SinopacGateway(BaseGateway):
         self.ticks = {}
 
         self.api.quote.set_on_tick_fop_v1_callback(self.tick_fop_v1_callback)
-        # self.api.quote.set_on_tick_stk_v1_callback(self.tick_stk_v1_callback)
-        self.api.quote.set_on_bidask_fop_v1_callback(self.bidask_fop_v1_callback)
-        # self.api.quote.set_on_bidask_stk_v1_callback(self.bidask_stk_v1_callback)
+        self.api.quote.set_on_tick_stk_v1_callback(self.tick_stk_v1_callback)
+        self.api.quote.set_on_bidask_fop_v1_callback(self.bidask_v1_callback)
+        self.api.quote.set_on_bidask_stk_v1_callback(self.bidask_v1_callback)
 
-    def tick_fop_v1_callback(self,exchange,tick):
-        """Exchange.TAIFEX Tick(code='TXFC2', datetime=datetime.datetime(2022, 2, 23, 19, 15, 2, 911000), open=Decimal('18042'), underlying_price=Decimal('18055.73'), bid_side_total_vol=8441, ask_side_total_vol=8430, avg_price=Decimal('18062.526374'), close=Decimal('18058'), high=Decimal('18093'), low=Decimal('18024'), amount=Decimal('36116'), total_amount=Decimal('244151169'), volume=2, total_volume=13517, tick_type=2, chg_type=2, price_chg=Decimal('16'), pct_chg=Decimal('0.088682'), simtrade=0)
+    def tick_stk_v1_callback(self, _, tick) -> None:
         """
-        tickdata = self.ticks.get(tick.code, None)
+        :param _: non-used (Exchange)
+        :param tick: Realtime tick data
+        :return: None
+        """
+        one_tick = self.ticks.get(tick.code, None)
         contract = self.code2contract.get(tick.code, None)
-        if tickdata is None:
-
-            tickdata = TickData(
+        if one_tick is None:
+            one_tick = TickData(
                 symbol=tick.code,
                 exchange=Exchange.LOCAL,
                 name=f"{contract['name']}{contract['delivery_month']}",
                 datetime=tick.datetime,
                 gateway_name=self.gateway_name,
             )
-            self.ticks[tick.code] = tickdata
+            self.ticks[tick.code] = one_tick
+        if tick.simtrade == 1:
+            one_tick.name = f"{contract['name']}{contract['delivery_month']}(試搓)"
+        else:
+            one_tick.name = f"{contract['name']}{contract['delivery_month']}"
 
-        tickdata.datetime = tick.datetime
-        tickdata.volume = tick.volume
-        tickdata.last_price = tick.close
-        tickdata.limit_up = contract.limit_up
-        tickdata.open_interest = 0
-        tickdata.limit_down = contract.limit_down
-        tickdata.open_price = tick.open
-        tickdata.high_price = tick.high
-        tickdata.low_price = tick.low
-        tickdata.pre_close = tick.close - tick.price_chg
-        tickdata.localtime = datetime.now()
-        self.on_tick(copy(tickdata))
-    def bidask_fop_v1_callback(self,exchange,tick):
-        tickdata = self.ticks.get(tick.code, None)
+        one_tick.datetime = tick.datetime
+        one_tick.volume = tick.volume
+        one_tick.last_price = tick.close
+        one_tick.limit_up = contract.limit_up
+        one_tick.open_interest = 0
+        one_tick.limit_down = contract.limit_down
+        one_tick.open_price = tick.open
+        one_tick.high_price = tick.high
+        one_tick.low_price = tick.low
+        one_tick.pre_close = tick.close - tick.price_chg
+        one_tick.localtime = datetime.now()
+        self.on_tick(copy(one_tick))
+
+    def tick_fop_v1_callback(self, _, tick):
+        """
+        期貨、選擇權報價 FOP_V1
+        """
+        one_tick = self.ticks.get(tick.code, None)
+        contract = self.code2contract.get(tick.code, None)
+        if one_tick is None:
+            one_tick = TickData(
+                symbol=tick.code,
+                exchange=Exchange.LOCAL,
+                name=f"{contract['name']}{contract['delivery_month']}",
+                datetime=tick.datetime,
+                gateway_name=self.gateway_name,
+            )
+            self.ticks[tick.code] = one_tick
+        if tick.simtrade == 1:
+            one_tick.name = f"{contract['name']}{contract['delivery_month']}(試搓)"
+        else:
+            one_tick.name = f"{contract['name']}{contract['delivery_month']}"
+
+        one_tick.datetime = tick.datetime
+        one_tick.volume = tick.volume
+        one_tick.last_price = tick.close
+        one_tick.limit_up = contract.limit_up
+        one_tick.open_interest = 0
+        one_tick.limit_down = contract.limit_down
+        one_tick.open_price = tick.open
+        one_tick.high_price = tick.high
+        one_tick.low_price = tick.low
+        one_tick.pre_close = tick.close - tick.price_chg
+        one_tick.localtime = datetime.now()
+        self.on_tick(copy(one_tick))
+
+    def bidask_v1_callback(self, _, tick):
+        one_tick = self.ticks.get(tick.code, None)
         contract = self.code2contract[tick.code]
-        if tickdata is None:
-            tickdata = TickData(
+        if one_tick is None:
+            one_tick = TickData(
                 symbol=tick.code,
                 exchange=Exchange.LOCAL,
                 name=f"{contract['name']}{contract['delivery_month']}",
                 datetime=tick.datetime,
                 gateway_name=self.gateway_name,
             )
-            self.ticks[tick.code] = tickdata
-        tickdata.bid_price_1 = tick["bid_price"][0]
-        tickdata.bid_price_2 = tick["bid_price"][1]
-        tickdata.bid_price_3 = tick["bid_price"][2]
-        tickdata.bid_price_4 = tick["bid_price"][3]
-        tickdata.bid_price_5 = tick["bid_price"][4]
-        tickdata.ask_price_1 = tick["ask_price"][0]
-        tickdata.ask_price_2 = tick["ask_price"][1]
-        tickdata.ask_price_3 = tick["ask_price"][2]
-        tickdata.ask_price_4 = tick["ask_price"][3]
-        tickdata.ask_price_5 = tick["ask_price"][4]
-        tickdata.bid_volume_1 = tick["bid_volume"][0]
-        tickdata.bid_volume_2 = tick["bid_volume"][1]
-        tickdata.bid_volume_3 = tick["bid_volume"][2]
-        tickdata.bid_volume_4 = tick["bid_volume"][3]
-        tickdata.bid_volume_5 = tick["bid_volume"][4]
-        tickdata.ask_volume_1 = tick["ask_volume"][0]
-        tickdata.ask_volume_2 = tick["ask_volume"][1]
-        tickdata.ask_volume_3 = tick["ask_volume"][2]
-        tickdata.ask_volume_4 = tick["ask_volume"][3]
-        tickdata.ask_volume_5 = tick["ask_volume"][4]
-        self.on_tick(copy(tickdata))
+            self.ticks[tick.code] = one_tick
+        one_tick.bid_price_1 = tick["bid_price"][0]
+        one_tick.bid_price_2 = tick["bid_price"][1]
+        one_tick.bid_price_3 = tick["bid_price"][2]
+        one_tick.bid_price_4 = tick["bid_price"][3]
+        one_tick.bid_price_5 = tick["bid_price"][4]
+        one_tick.ask_price_1 = tick["ask_price"][0]
+        one_tick.ask_price_2 = tick["ask_price"][1]
+        one_tick.ask_price_3 = tick["ask_price"][2]
+        one_tick.ask_price_4 = tick["ask_price"][3]
+        one_tick.ask_price_5 = tick["ask_price"][4]
+        one_tick.bid_volume_1 = tick["bid_volume"][0]
+        one_tick.bid_volume_2 = tick["bid_volume"][1]
+        one_tick.bid_volume_3 = tick["bid_volume"][2]
+        one_tick.bid_volume_4 = tick["bid_volume"][3]
+        one_tick.bid_volume_5 = tick["bid_volume"][4]
+        one_tick.ask_volume_1 = tick["ask_volume"][0]
+        one_tick.ask_volume_2 = tick["ask_volume"][1]
+        one_tick.ask_volume_3 = tick["ask_volume"][2]
+        one_tick.ask_volume_4 = tick["ask_volume"][3]
+        one_tick.ask_volume_5 = tick["ask_volume"][4]
+        self.on_tick(copy(one_tick))
 
     def query_contract(self, securities_type=None):
-        self.write_log("商品檔" + securities_type)
+        self.write_log(f"商品檔 {securities_type} 下載完畢.")
         for category in self.api.Contracts.Futures:
             for contract in category:
                 data = ContractData(
@@ -148,7 +191,7 @@ class SinopacGateway(BaseGateway):
                     option_type=OptionType.CALL
                     if contract.option_right == "C"
                     else OptionType.PUT,
-                    option_expiry=None,
+                    option_expiry=datetime.strptime(contract.delivery_date, "%Y/%m/%d"),
                 )
                 self.on_contract(data)
                 self.code2contract[contract.code] = contract
@@ -170,24 +213,19 @@ class SinopacGateway(BaseGateway):
                 self.code2contract[contract.code] = contract
 
     def connect(self, setting: dict) -> None:
-        """連接 Shioaji """
+        """連接 Shioaji"""
         userid: str = setting["登入帳號"]
         password: str = setting["密碼"]
         try:
-            self.api.login(
-                userid, password, contracts_cb=self.query_contract
-            )
+            self.api.login(userid, password, contracts_cb=self.query_contract)
         except Exception as exc:
             self.write_log(f"登入失败. [{exc}]")
             return
         self.write_log(f"登入成功. [{userid}]")
-        self.select_default_account(setting.get("預設現貨帳號", 0),
-                                    setting.get("預設期貨帳號", 0))
+        self.select_default_account(setting.get("預設現貨帳號", 0), setting.get("預設期貨帳號", 0))
         if setting["憑證檔案路徑"] != "":
-            self.api.activate_ca(setting["憑證檔案路徑"], setting["憑證密碼"],
-                                 setting["登入帳號"])
+            self.api.activate_ca(setting["憑證檔案路徑"], setting["憑證密碼"], setting["登入帳號"])
             self.write_log(f"{setting.get('登入帳號')} 憑證 已啟用.")
-
 
     def select_default_account(self, select_stock_number, select_futures_number):
         stock_account_count = 0
@@ -226,7 +264,7 @@ class SinopacGateway(BaseGateway):
         code = contract.code
         tick = self.ticks.get(code, None)
         if tick is None:
-            timestamp = snapshots[0].ts / 10 ** 9 - 8 * 60 * 60
+            timestamp = snapshots[0].ts / 10**9 - 8 * 60 * 60
             dt = datetime.fromtimestamp(timestamp)
 
             tick = TickData(
@@ -249,6 +287,7 @@ class SinopacGateway(BaseGateway):
         tick.bid_volume_1 = snapshots[0].buy_volume
         tick.ask_price_1 = snapshots[0].sell_price
         tick.ask_volume_1 = snapshots[0].sell_volume
+
         self.ticks[code] = tick
         self.on_tick(copy(tick))
 
@@ -262,7 +301,7 @@ class SinopacGateway(BaseGateway):
 
     def query_account(self) -> None:
         """查询资金"""
-        self.reqid += 1
+        # self.reqid += 1
         pass
 
     def query_position(self) -> None:
@@ -281,9 +320,9 @@ class SinopacGateway(BaseGateway):
         contract = self.code2contract.get(req.symbol, None)
         if contract:
             self.get_contract_snapshot(contract)
-            self.api.quote.subscribe(contract, quote_type="tick",version='v1')
-            self.api.quote.subscribe(contract, quote_type="bidask",version='v1')
+            self.api.quote.subscribe(contract, quote_type="tick", version="v1")
+            self.api.quote.subscribe(contract, quote_type="bidask", version="v1")
             self.write_log(f"訂閱 {contract.code} {contract.name}")
             self.subscribed.add(req.symbol)
         else:
-            self.write_log(f"無此訂閱商品[{req}].")
+            self.write_log(f"無此訂閱商品[{req.symbol}].")
