@@ -7,6 +7,7 @@ from typing import Dict
 import pytz
 from shioaji import Shioaji
 from shioaji.account import StockAccount, FutureAccount
+import shioaji.constant as sj_contant
 from vnpy.trader.constant import Exchange, Product, OptionType
 from vnpy.trader.gateway import BaseGateway
 from vnpy.trader.object import (
@@ -15,6 +16,8 @@ from vnpy.trader.object import (
     CancelRequest,
     SubscribeRequest,
     TickData,
+    PositionData,
+    Direction,
 )
 
 TW_TZ = pytz.timezone("Asia/Taipei")
@@ -111,7 +114,7 @@ class SinopacGateway(BaseGateway):
 
         one_tick.datetime = tick.datetime
         one_tick.volume = tick.volume
-        one_tick.last_price = tick.close
+        one_tick.last_price = tick.closeq
         one_tick.limit_up = contract.limit_up
         one_tick.open_interest = 0
         one_tick.limit_down = contract.limit_down
@@ -217,15 +220,23 @@ class SinopacGateway(BaseGateway):
         userid: str = setting["登入帳號"]
         password: str = setting["密碼"]
         try:
-            self.api.login(userid, password, contracts_cb=self.query_contract)
+            all_account = self.api.login(
+                userid, password, contracts_cb=self.query_contract
+            )
         except Exception as exc:
             self.write_log(f"登入失败. [{exc}]")
             return
         self.write_log(f"登入成功. [{userid}]")
+        for acc in all_account:
+            self.write_log(acc)
+        self.register_all_event()
         self.select_default_account(setting.get("預設現貨帳號", 0), setting.get("預設期貨帳號", 0))
         if setting["憑證檔案路徑"] != "":
             self.api.activate_ca(setting["憑證檔案路徑"], setting["憑證密碼"], setting["登入帳號"])
             self.write_log(f"{setting.get('登入帳號')} 憑證 已啟用.")
+
+    def register_all_event(self):
+        self.query_position()
 
     def select_default_account(self, select_stock_number, select_futures_number):
         stock_account_count = 0
@@ -255,6 +266,33 @@ class SinopacGateway(BaseGateway):
             self.write_log(
                 f"***預設 期貨下單帳號 - [{select_futures_number}] {acc.broker_id}-{acc.account_id} {acc.username}"
             )
+
+    def list_position_callback(self, positions):
+        # Stock account
+        for pos in positions:
+            if pos.last_price == 0:
+                self.write_log(f"忽略 {pos.code} 已下市，無法交易.")
+                continue
+            direction = (
+                Direction.LONG
+                if pos.direction is sj_contant.Action.Buy
+                else Direction.SHORT
+            )
+            volume = pos.quantity
+            total_qty = pos.quantity
+            yd_qty = pos.yd_quantity
+            pos = PositionData(
+                symbol=f"{pos.code}",
+                exchange=Exchange.LOCAL,
+                direction=direction,
+                volume=float(volume),
+                frozen=float(total_qty - yd_qty),
+                price=float(pos.price),
+                pnl=float(pos.pnl),
+                yd_volume=yd_qty,
+                gateway_name=self.gateway_name,
+            )
+            self.on_position(pos)
 
     def get_contract_snapshot(self, contract):
         self.tick_snapshot(contract, Exchange.LOCAL)
@@ -306,10 +344,36 @@ class SinopacGateway(BaseGateway):
 
     def query_position(self) -> None:
         """查询持仓"""
-        pass
+        # Stock account
+        self.api.list_positions(timeout=0, cb=self.list_position_callback)
+
+        # Future account
+        try:
+            all_pos = self.api.get_account_openposition(query_type="1").data()
+        except AttributeError:
+            all_pos = []
+            self.write_log("get_account_openposition fail.")
+        for pos in all_pos:
+            if len(pos.items()) == 0:
+                continue
+            pos = PositionData(
+                symbol=f"{pos.get('Code')}",
+                exchange=EXCHANGE_SINOPAC2VT.get("TFE", Exchange.TFE),
+                direction=Direction.LONG
+                if pos.get("OrderBS") == "B"
+                else Direction.SHORT,
+                volume=float(pos.get("Volume")),
+                frozen=0,
+                price=float(pos.get("ContractAverPrice")),
+                pnl=float(pos.get("FlowProfitLoss")),
+                yd_volume=0,
+                gateway_name=self.gateway_name,
+            )
+            self.on_position(pos)
 
     def send_order(self, req: OrderRequest) -> str:
         """委托下单"""
+
         return "12345"
 
     def subscribe(self, req: SubscribeRequest) -> None:
