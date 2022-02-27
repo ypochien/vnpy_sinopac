@@ -6,7 +6,7 @@ authors = ["ypochien"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = ">=3.7,<=3,8"
+python = ">=3.7,<=3.8"
 shioaji = "^0.3.4"
 
 [tool.poetry.dev-dependencies]
