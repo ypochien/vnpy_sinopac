@@ -11,7 +11,7 @@ classifiers=[
     "Development Status :: 5 - Production/Stable",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
-    "Operating System :: Darwin :: Macos",
+    "Operating System :: MacOS",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Topic :: Office/Business :: Financial :: Investment",
