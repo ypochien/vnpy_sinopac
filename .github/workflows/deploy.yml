@@ -1,0 +1,47 @@
+name: Deploy
+on: [push]
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix: 
+        os: [ubuntu-latest, windows-latest]
+        python-version: [3.6, 3.7]
+    steps:
+      - uses: actions/checkout@master
+      - name: Setup Python  
+        uses: actions/setup-python@master
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Dependency
+        run: |
+          make install
+      - name: Generate coverage report
+        run: |
+          make test-cov
+      - name: Upload coverage to Codecov  
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: true
+
+  build_publish:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') && github.repository == 'ypochien/vnpy_sinopac'
+    needs: [test]
+    steps:
+      - uses: actions/checkout@master
+      - name: Setup Python  
+        uses: actions/setup-python@master
+        with:
+          python-version: 3.7
+      - name: Install Dependency
+        run: |
+          make install-poetry
+      - name: Publish package to PyPI
+        run: |
+          poetry build
+          poetry publish --username __token__ --password ${{ secrets.PYPI_TOKEN }}

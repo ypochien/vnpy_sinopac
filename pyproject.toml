@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "vnpy_sinopac"
+version = "0.0.0"
+description = "The best trading API - Shioaji gateway with VNPY."
+authors = ["ypochien"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+shioaji = "^0.3.4-alpha.1"
+
+[tool.poetry.dev-dependencies]
+
+[tool.poetry-dynamic-versioning]
+enable = true
+vcs = "git"
+format = "v{base}"
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
+build-backend = "poetry.core.masonry.api"
