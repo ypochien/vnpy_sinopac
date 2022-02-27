@@ -1,7 +1,7 @@
 build:
-    python setup.py sdist bdist_wheel
+	python setup.py sdist bdist_wheel
 upload:
-    twine upload dist/*
+	twine upload dist/*
 
 install: install-poetry
 	poetry install
