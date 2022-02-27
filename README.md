@@ -6,5 +6,5 @@
 
 VeighNa框架的 Sinopac 交易接口
 
-- vnpy - https://github.com/vnpy/vnpy/
+- VeighNa (VNPY) - https://github.com/vnpy/vnpy/
 - shioaji - https://sinotrade.github.io/

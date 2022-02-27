@@ -4,6 +4,20 @@ version = "0.0.0"
 description = "The best trading API - Shioaji gateway with VNPY."
 authors = ["ypochien"]
 license = "MIT"
+readme="README.md"
+repository="https://github.com/ypochien/vnpy_sinopac"
+keywords=["quant","quantitative","investment","trading","algotrading"]
+classifiers=[
+    "Development Status :: 5 - Production/Stable",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Darwin :: Macos",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "License :: OSI Approved :: MIT License",
+]
 
 [tool.poetry.dependencies]
 python = "^3.7, <3.9"
