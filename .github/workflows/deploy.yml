@@ -6,7 +6,7 @@ jobs:
     strategy:
       matrix: 
         os: [ubuntu-latest, windows-latest]
-        python-version:  [3.7,3.8]
+        python-version:  [3.8,3.9]
     steps:
       - uses: actions/checkout@master
       - name: Setup Python  
@@ -37,7 +37,7 @@ jobs:
       - name: Setup Python  
         uses: actions/setup-python@master
         with:
-          python-version: 3.7
+          python-version: 3.8
       - name: Install Dependency
         run: |
           make install-poetry
