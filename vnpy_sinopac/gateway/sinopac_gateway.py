@@ -2,14 +2,17 @@
 # author: ypochien
 from copy import copy
 from datetime import datetime
-from typing import Dict
-
+from typing import Dict, List, Optional
+import pandas as pd
 import pytz
 from shioaji import Shioaji
 from shioaji.account import StockAccount, FutureAccount
 import shioaji.constant as sj_contant
-from vnpy.trader.constant import Exchange, Product, OptionType
+from vnpy.trader.utility import round_to
+from vnpy.trader.constant import Exchange, Product, OptionType, Interval
 from vnpy.trader.gateway import BaseGateway
+from vnpy.trader.datafeed import BaseDatafeed
+
 from vnpy.trader.object import (
     ContractData,
     OrderRequest,
@@ -18,6 +21,8 @@ from vnpy.trader.object import (
     TickData,
     PositionData,
     Direction,
+    HistoryRequest,
+    BarData,
 )
 
 TW_TZ = pytz.timezone("Asia/Taipei")
@@ -172,6 +177,7 @@ class SinopacGateway(BaseGateway):
                     pricetick=contract.unit,
                     net_position=True,
                     min_volume=1,
+                    history_data=True,
                     gateway_name=self.gateway_name,
                 )
                 self.on_contract(data)
@@ -194,6 +200,7 @@ class SinopacGateway(BaseGateway):
                     option_type=OptionType.CALL
                     if contract.option_right == "C"
                     else OptionType.PUT,
+                    history_data=True,
                     option_expiry=datetime.strptime(contract.delivery_date, "%Y/%m/%d"),
                 )
                 self.on_contract(data)
@@ -210,6 +217,7 @@ class SinopacGateway(BaseGateway):
                     net_position=False,
                     pricetick=0.01,
                     min_volume=1,
+                    history_data=True,
                     gateway_name=self.gateway_name,
                 )
                 self.on_contract(data)
@@ -387,3 +395,40 @@ class SinopacGateway(BaseGateway):
             self.subscribed.add(req.symbol)
         else:
             self.write_log(f"無此訂閱商品[{req.symbol}].")
+
+    def query_history(self, req: HistoryRequest) -> List[BarData]:
+        symbol = req.symbol
+        exchange = req.exchange
+        interval = req.interval
+        start = datetime.strftime(req.start, "%Y-%m-%d")
+        end = datetime.strftime(req.end, "%Y-%m-%d")
+
+        sj_contract = self.code2contract.get(symbol)
+        data: List[BarData] = []
+
+        if interval == Interval.MINUTE:
+            minute_bars = self.api.kbars(sj_contract, start, end)
+            df = pd.DataFrame({**minute_bars})
+            df.ts = pd.to_datetime(df.ts)
+            if df is not None:
+                for ix, row in df.iterrows():
+                    dt = row.ts.to_pydatetime()
+                    dt = TW_TZ.localize(dt)
+
+                    bar = BarData(
+                        symbol=symbol,
+                        exchange=exchange,
+                        interval=interval,
+                        datetime=dt,
+                        open_price=round_to(row["Open"], 0.000001),
+                        high_price=round_to(row["High"], 0.000001),
+                        low_price=round_to(row["Low"], 0.000001),
+                        close_price=round_to(row["Close"], 0.000001),
+                        volume=row["Volume"],
+                        turnover=row["Amount"],
+                        open_interest=0,
+                        gateway_name="Sinopac",
+                    )
+
+                    data.append(bar)
+        return data

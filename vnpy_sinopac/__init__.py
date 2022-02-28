@@ -1,9 +1,5 @@
-try:
-    from .gateway import SinopacGateway
-except ImportError:
-    pass
-
 import importlib_metadata
+from .gateway import SinopacGateway
 
 try:
     __version__ = importlib_metadata.version("vnpy_sinopac")
