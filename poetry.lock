@@ -467,7 +467,7 @@ requirements_deprecated_finder = []
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<3.9"
-content-hash = "b273b2156ef1ffdec5979e59f9456d1621143f7e0671926aeb28ee4268615dd2"
+content-hash = "4d86dacc3c409c3da8b499a5b0e80b1b0d182176b4a3b0c8c3ffbbd70060e656"
 
 [metadata.files]
 atomicwrites = [

@@ -8,6 +8,8 @@ from vnpy.event import EventEngine
 from vnpy.trader.engine import MainEngine
 from vnpy.trader.ui import MainWindow, create_qapp
 
+# from vnpy_datamanager import DataManagerApp
+# from vnpy_chartwizard import ChartWizardApp
 from vnpy_sinopac import SinopacGateway
 
 
@@ -17,6 +19,8 @@ def main():
 
     event_engine = EventEngine()
     main_engine = MainEngine(event_engine)
+    # main_engine.add_app(DataManagerApp)
+    # main_engine.add_app(ChartWizardApp)
     main_engine.add_gateway(SinopacGateway)
 
     main_window = MainWindow(main_engine, event_engine)
