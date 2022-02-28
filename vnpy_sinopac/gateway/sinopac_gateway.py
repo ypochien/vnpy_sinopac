@@ -220,14 +220,12 @@ class SinopacGateway(BaseGateway):
         userid: str = setting["登入帳號"]
         password: str = setting["密碼"]
         try:
-            all_account = self.api.login(
-                userid, password, contracts_cb=self.query_contract
-            )
+            self.api.login(userid, password, contracts_cb=self.query_contract)
         except Exception as exc:
             self.write_log(f"登入失败. [{exc}]")
             return
         self.write_log(f"登入成功. [{userid}]")
-        for acc in all_account:
+        for acc in self.api.list_accounts():
             self.write_log(acc)
         self.register_all_event()
         self.select_default_account(setting.get("預設現貨帳號", 0), setting.get("預設期貨帳號", 0))
@@ -243,14 +241,12 @@ class SinopacGateway(BaseGateway):
         futures_account_count = 0
         for acc in self.api.list_accounts():
             if isinstance(acc, StockAccount):
-                self.write_log(
-                    f"股票帳號: [{stock_account_count}] - {acc.broker_id}-{acc.account_id} {acc.username}"
-                )
+                msg = f"股票帳號: [{stock_account_count}] {'已簽署' if acc.signed else '未簽署'} - {acc.broker_id}-{acc.account_id} {acc.username}"
+                self.write_log(msg)
                 stock_account_count += 1
             if isinstance(acc, FutureAccount):
-                self.write_log(
-                    f"期貨帳號: [{futures_account_count}] - {acc.broker_id}-{acc.account_id} {acc.username}"
-                )
+                msg = f"期貨帳號: [{futures_account_count}] {'已簽署' if acc.signed else '未簽署'} - {acc.broker_id}-{acc.account_id} {acc.username}"
+                self.write_log(msg)
                 futures_account_count += 1
 
         if stock_account_count >= 2:
@@ -348,28 +344,29 @@ class SinopacGateway(BaseGateway):
         self.api.list_positions(timeout=0, cb=self.list_position_callback)
 
         # Future account
-        try:
-            all_pos = self.api.get_account_openposition(query_type="1").data()
-        except AttributeError:
-            all_pos = []
-            self.write_log("get_account_openposition fail.")
-        for pos in all_pos:
-            if len(pos.items()) == 0:
-                continue
-            pos = PositionData(
-                symbol=f"{pos.get('Code')}",
-                exchange=EXCHANGE_SINOPAC2VT.get("TFE", Exchange.TFE),
-                direction=Direction.LONG
-                if pos.get("OrderBS") == "B"
-                else Direction.SHORT,
-                volume=float(pos.get("Volume")),
-                frozen=0,
-                price=float(pos.get("ContractAverPrice")),
-                pnl=float(pos.get("FlowProfitLoss")),
-                yd_volume=0,
-                gateway_name=self.gateway_name,
-            )
-            self.on_position(pos)
+        if self.api.futopt_account:
+            try:
+                all_pos = self.api.get_account_openposition(query_type="1").data()
+            except AttributeError:
+                all_pos = []
+                self.write_log("get_account_openposition fail.")
+            for pos in all_pos:
+                if len(pos.items()) == 0:
+                    continue
+                pos = PositionData(
+                    symbol=f"{pos.get('Code')}",
+                    exchange=EXCHANGE_SINOPAC2VT.get("TFE", Exchange.TFE),
+                    direction=Direction.LONG
+                    if pos.get("OrderBS") == "B"
+                    else Direction.SHORT,
+                    volume=float(pos.get("Volume")),
+                    frozen=0,
+                    price=float(pos.get("ContractAverPrice")),
+                    pnl=float(pos.get("FlowProfitLoss")),
+                    yd_volume=0,
+                    gateway_name=self.gateway_name,
+                )
+                self.on_position(pos)
 
     def send_order(self, req: OrderRequest) -> str:
         """委托下单"""
