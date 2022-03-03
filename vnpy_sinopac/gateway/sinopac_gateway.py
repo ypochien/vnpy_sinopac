@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
 # author: ypochien
+import time
 from copy import copy
 from datetime import datetime
 from enum import Enum
@@ -224,22 +225,25 @@ class SinopacGateway(BaseGateway):
         # self.write_log(
         #     f"relay_cb {topic} -{relay_data['order']['id']} {relay_data['operation']}"
         # )
-        if topic == sj_constant.OrderState.FOrder:
-            self.impl_forder(relay_data)
-        elif topic == sj_constant.OrderState.TFTOrder:
-            pass
+        if topic in [sj_constant.OrderState.FOrder, sj_constant.OrderState.TFTOrder]:
+            self.impl_order(relay_data)
         elif topic == sj_constant.OrderState.FDeal:
             self.impl_deal(self.api.futopt_account, relay_data)
         elif topic == sj_constant.OrderState.TFTDeal:
             self.impl_deal(self.api.stock_account, relay_data)
 
-    def impl_forder(self, relay_data):
+    def impl_order(self, relay_data):
         orderid = relay_data["order"]["id"]
         order_data: OrderData = self.orders.get(orderid, None)
         sj_trade: Trade = self.trades.get(orderid, None)
+        acc_type = relay_data["order"]["account"]["account_type"]  # "F" or "S"
+
         if sj_trade is None:
             seq_no = relay_data["order"]["seqno"]
-            sj_trade = self.get_trade_by_seqno(self.api.futopt_account, seq_no)
+            account = (
+                self.api.stock_account if acc_type == "S" else self.api.futopt_account
+            )
+            sj_trade = self.get_trade_by_seqno(account, seq_no)
             self.trades[orderid] = sj_trade
         if order_data is None:
             order_data = OrderData(
@@ -255,7 +259,13 @@ class SinopacGateway(BaseGateway):
                 volume=relay_data["order"]["quantity"],
                 gateway_name=self.gateway_name,
             )
-            order_data.offset = OFFSET_FUT_SINOPAC2VT[relay_data["order"]["oc_type"]]
+            order_data.offset = (
+                OFFSET_STK_SINOPAC2VT[
+                    (relay_data["order"]["order_cond"], sj_constant.StockFirstSell.No)
+                ]
+                if acc_type == "S"
+                else OFFSET_FUT_SINOPAC2VT[relay_data["order"]["oc_type"]]
+            )
             order_data.price = round_to(relay_data["order"]["price"], 0.00001)
             order_data.volume = round_to(relay_data["order"]["quantity"], 1)
             order_data.status = Status.SUBMITTING
@@ -283,8 +293,13 @@ class SinopacGateway(BaseGateway):
         self.on_order(order_data)
 
     def get_trade_by_seqno(self, account, seq_no):
-        self.api._solace.update_status(account=account, seqno=seq_no)
-        sj_trade = self.api._solace._trades[xxhash.xxh32_hexdigest(seq_no)]
+        try:
+            self.api._solace.update_status(account=account, seqno=seq_no)
+            sj_trade = self.api._solace._trades[xxhash.xxh32_hexdigest(seq_no)]
+        except:
+            time.sleep(0.1)
+            self.api._solace.update_status(account=account, seqno=seq_no)
+            sj_trade = self.api._solace._trades[xxhash.xxh32_hexdigest(seq_no)]
         return sj_trade
 
     def impl_deal(self, account, relay_data):

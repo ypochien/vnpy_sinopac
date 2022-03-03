@@ -4,10 +4,11 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/vnpy_sinopac)
 ![PyPI](https://img.shields.io/pypi/v/vnpy_sinopac)
 
-# Shioaji API - Shioaji 交易接口 for VeighNa框架
+# Sinopac API - Shioaji 交易接口 for VeighNa框架
 
 - Sinopac API - shioaji - https://sinotrade.github.io/
 - VeighNa (VNPY) - https://github.com/vnpy/vnpy/
+- vnpy_sinopac - https://github.com/ypochien/vnpy_sinopac
 
 ## Requirement
 * VeighNa 3.0 
@@ -32,6 +33,7 @@ python scripy/run.py
 ## 贊助 Donating
 * 如果你發現這個專案有幫助到你，請考慮 [贊助](https://etherscan.io/address/ypochien.eth)
 * ETH是最棒的，但其他TOKEN也都歡迎。
+* ![ypochien.eth.png](ypochien.eth.png)
 
 
 
