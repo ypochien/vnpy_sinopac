@@ -14,7 +14,7 @@ import xxhash
 from shioaji import Shioaji, contracts
 from shioaji.account import StockAccount, FutureAccount
 from shioaji.order import Status as SinopacStatus
-from shioaji.order import Trade
+from shioaji.order import Trade,Deal
 from vnpy.trader.constant import (
     Exchange,
     Product,
@@ -325,6 +325,14 @@ class SinopacGateway(BaseGateway):
         )
         self.on_trade(trade)
 
+        vn_order:OrderData = self.orders.get(orderid,None)
+        if vn_order:
+            vn_order.traded += relay_data["quantity"]
+            self.on_order(vn_order)
+        else:
+            return 
+
+
     def query_contract(self, securities_type=None):
         self.write_log(f"商品檔 {securities_type} 下載完畢.")
         for category in self.api.Contracts.Futures:
@@ -403,6 +411,11 @@ class SinopacGateway(BaseGateway):
             self.write_log(f"{setting.get('登入帳號')} 憑證 已啟用.")
 
     def update_trades(self, reload=False):
+        def convert_deal2vntrade(vn_order:OrderData,sjdeal:Deal)->TradeData:
+            """Deal(seq='j5014266', price=55.0, quantity=1, ts=1646672854)]"""
+            vn_trade = TradeData(gateway_name=vn_order.gateway_name,symbol=vn_order.symbol,exchange=vn_order.exchange,orderid=vn_order.orderid,tradeid=sjdeal.seq,direction=vn_order.direction,price=sjdeal.price,volume=sjdeal.quantity,datetime=datetime.fromtimestamp(sjdeal.ts))
+            return vn_trade
+
         def convert_sjtrade2vnorder(sjtrade: Trade) -> OrderData:
             vt_offset = Offset.NONE
             if sjtrade.order.account.broker_id.startswith("F"):
@@ -435,6 +448,9 @@ class SinopacGateway(BaseGateway):
         for sj_trade in self.api.list_trades():
             vn_order = convert_sjtrade2vnorder(sj_trade)
             self.on_order(vn_order)
+            for deal in sj_trade.status.deals:
+                vn_trade = convert_deal2vntrade(vn_order,deal)
+                self.on_trade(vn_trade)
 
     def register_all_event(self):
         self.query_position()
