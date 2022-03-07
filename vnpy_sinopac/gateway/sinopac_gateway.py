@@ -327,10 +327,14 @@ class SinopacGateway(BaseGateway):
 
         vn_order:OrderData = self.orders.get(orderid,None)
         if vn_order:
+            vn_order.status = Status.PARTTRADED
             vn_order.traded += relay_data["quantity"]
+            if vn_order.traded == vn_order.volume:
+                vn_order.status = Status.ALLTRADED
             self.on_order(vn_order)
         else:
-            return 
+            self.write_log(f"[{orderid}] order not found ")
+            return
 
 
     def query_contract(self, securities_type=None):
