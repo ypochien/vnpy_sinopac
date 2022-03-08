@@ -9,7 +9,7 @@ from typing import Dict, List, Any
 import pandas as pd
 import pytz
 import shioaji.constant as sj_constant
-import shioaji.contracts
+from shioaji.contracts import Contract
 import xxhash
 from shioaji import Shioaji, contracts
 from shioaji.account import StockAccount, FutureAccount
@@ -145,12 +145,12 @@ class SinopacGateway(BaseGateway):
         super().__init__(event_engine, gateway_name)
         self.api: Shioaji = Shioaji()
 
-        self.code2contract: Dict[str, shioaji.contracts.Contract] = {}
-        self.subscribed = set()
-        self.ticks: Dict[str, TickData] = {}
+        self.code2contract: Dict[str, Contract] = {}  # str map sj contract
+        self.subscribed = set()  # for subscribe set
+        self.ticks: Dict[str, TickData] = {}  # for snapshot
         self.orders: Dict[str, OrderData] = {}  # for vnpy
         self.trades: Dict[str, Trade] = {}  # for sj
-        self.positions: Dict[str, PositionData] = {}
+        self.positions: Dict[str, PositionData] = {}  # for on_position
         self.position_update_time = datetime.now()  # 最後更新損益時間
 
         self.api.set_order_callback(self.relay_callback)
@@ -636,7 +636,7 @@ class SinopacGateway(BaseGateway):
         self.position_update_time = datetime.now()
 
     def place_order_callback(self, trade: Trade):
-        sj_contract: shioaji.contracts.Contract = trade["contract"]
+        sj_contract: Contract = trade["contract"]
         order_data: OrderData = self.orders.get(trade.order.id, None)
 
         if self.trades.get(trade.order.id, None) is None:
