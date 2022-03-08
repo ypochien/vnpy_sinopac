@@ -14,7 +14,7 @@ import xxhash
 from shioaji import Shioaji, contracts
 from shioaji.account import StockAccount, FutureAccount
 from shioaji.order import Status as SinopacStatus
-from shioaji.order import Trade,Deal
+from shioaji.order import Trade, Deal
 from vnpy.trader.constant import (
     Exchange,
     Product,
@@ -145,11 +145,13 @@ class SinopacGateway(BaseGateway):
         super().__init__(event_engine, gateway_name)
         self.api: Shioaji = Shioaji()
 
-        self.code2contract = {}
+        self.code2contract: Dict[str, shioaji.contracts.Contract] = {}
         self.subscribed = set()
-        self.ticks = {}
-        self.orders = {}  # for vnpy
-        self.trades = {}  # for sj
+        self.ticks: Dict[str, TickData] = {}
+        self.orders: Dict[str, OrderData] = {}  # for vnpy
+        self.trades: Dict[str, Trade] = {}  # for sj
+        self.positions: Dict[str, PositionData] = {}
+        self.position_update_time = datetime.now()  # 最後更新損益時間
 
         self.api.set_order_callback(self.relay_callback)
         self.api.quote.set_on_tick_fop_v1_callback(self.tick_v1_callback)
@@ -325,7 +327,7 @@ class SinopacGateway(BaseGateway):
         )
         self.on_trade(trade)
 
-        vn_order:OrderData = self.orders.get(orderid,None)
+        vn_order: OrderData = self.orders.get(orderid, None)
         if vn_order:
             vn_order.status = Status.PARTTRADED
             vn_order.traded += relay_data["quantity"]
@@ -334,8 +336,9 @@ class SinopacGateway(BaseGateway):
             self.on_order(vn_order)
         else:
             self.write_log(f"[{orderid}] order not found ")
-            return
 
+        if (datetime.now() - self.position_update_time).seconds > 5:
+            self.query_position()
 
     def query_contract(self, securities_type=None):
         self.write_log(f"商品檔 {securities_type} 下載完畢.")
@@ -415,9 +418,19 @@ class SinopacGateway(BaseGateway):
             self.write_log(f"{setting.get('登入帳號')} 憑證 已啟用.")
 
     def update_trades(self, reload=False):
-        def convert_deal2vntrade(vn_order:OrderData,sjdeal:Deal)->TradeData:
+        def convert_deal2vntrade(vn_order: OrderData, sjdeal: Deal) -> TradeData:
             """Deal(seq='j5014266', price=55.0, quantity=1, ts=1646672854)]"""
-            vn_trade = TradeData(gateway_name=vn_order.gateway_name,symbol=vn_order.symbol,exchange=vn_order.exchange,orderid=vn_order.orderid,tradeid=sjdeal.seq,direction=vn_order.direction,price=sjdeal.price,volume=sjdeal.quantity,datetime=datetime.fromtimestamp(sjdeal.ts))
+            vn_trade = TradeData(
+                gateway_name=vn_order.gateway_name,
+                symbol=vn_order.symbol,
+                exchange=vn_order.exchange,
+                orderid=vn_order.orderid,
+                tradeid=sjdeal.seq,
+                direction=vn_order.direction,
+                price=sjdeal.price,
+                volume=sjdeal.quantity,
+                datetime=datetime.fromtimestamp(sjdeal.ts),
+            )
             return vn_trade
 
         def convert_sjtrade2vnorder(sjtrade: Trade) -> OrderData:
@@ -453,7 +466,7 @@ class SinopacGateway(BaseGateway):
             vn_order = convert_sjtrade2vnorder(sj_trade)
             self.on_order(vn_order)
             for deal in sj_trade.status.deals:
-                vn_trade = convert_deal2vntrade(vn_order,deal)
+                vn_trade = convert_deal2vntrade(vn_order, deal)
                 self.on_trade(vn_trade)
 
     def register_all_event(self):
@@ -489,30 +502,30 @@ class SinopacGateway(BaseGateway):
 
     def list_position_callback(self, positions):
         # Stock account
-        for pos in positions:
-            if pos.last_price == 0:
-                self.write_log(f"忽略 {pos.code} 已下市，無法交易.")
+        for sj_pos in positions:
+            if sj_pos.last_price == 0:
+                self.write_log(f"忽略 {sj_pos.code} 已下市，無法交易.")
                 continue
             direction = (
                 Direction.LONG
-                if pos.direction is sj_constant.Action.Buy
+                if sj_pos.direction is sj_constant.Action.Buy
                 else Direction.SHORT
             )
-            volume = pos.quantity
-            total_qty = pos.quantity
-            yd_qty = pos.yd_quantity
+            volume = sj_pos.quantity
+            total_qty = sj_pos.quantity
+            yd_qty = sj_pos.yd_quantity
             pos = PositionData(
-                symbol=pos.code,
+                symbol=sj_pos.code,
                 exchange=Exchange.LOCAL,
                 direction=direction,
                 volume=round_to(volume, 1),
                 frozen=round_to(total_qty - yd_qty, 1),
-                price=round_to(pos.price, 0.0001),
-                pnl=round_to(pos.pnl, 1),
+                price=round_to(sj_pos.price, 0.0001),
+                pnl=round_to(sj_pos.pnl, 1),
                 yd_volume=yd_qty,
                 gateway_name=self.gateway_name,
             )
-            self.on_position(pos)
+            self.positions[sj_pos.code] = pos
 
     def get_contract_snapshot(self, contract):
         self.tick_snapshot(contract, Exchange.LOCAL)
@@ -557,7 +570,17 @@ class SinopacGateway(BaseGateway):
 
         sj_trade: Trade = self.trades.get(req.orderid, None)
         if sj_trade:
-            self.api.cancel_order(self.trades[req.orderid], timeout=0, cb=cancel_cb)
+            if sj_trade.status in [
+                shioaji.constant.Status.Submitted,
+                shioaji.constant.Status.PendingSubmit,
+                shioaji.constant.Status.PartFilled,
+                shioaji.constant.Status.PreSubmitted,
+            ]:
+                self.api.cancel_order(self.trades[req.orderid], timeout=0, cb=cancel_cb)
+            else:
+                self.write_log(
+                    f"{req.symbol} [{req.orderid}] is {sj_trade.status.status.value} can't cancel."
+                )
         else:
             self.write_log(f"Cancel {req.symbol} {req.orderid} not found.")
 
@@ -572,6 +595,13 @@ class SinopacGateway(BaseGateway):
 
     def query_position(self) -> None:
         """Query hold positions"""
+        # Clear all Pos
+        for position in self.positions.values():
+            position.volume = 0
+            position.frozen = 0
+            position.price = 0
+            position.pnl = 0
+
         # Stock account
         self.api.list_positions(timeout=0, cb=self.list_position_callback)
 
@@ -583,23 +613,27 @@ class SinopacGateway(BaseGateway):
             except AttributeError:
                 all_pos = []
                 self.write_log("get_account_open_position fail.")
-            for pos in all_pos:
-                if len(pos.items()) == 0:
+            for sj_pos in all_pos:
+                if len(sj_pos.items()) == 0:
                     continue
                 pos = PositionData(
-                    symbol=f"{pos.get('Code')}",
+                    symbol=f"{sj_pos.get('Code')}",
                     exchange=Exchange.LOCAL,
                     direction=Direction.LONG
-                    if pos.get("OrderBS") == "B"
+                    if sj_pos.get("OrderBS") == "B"
                     else Direction.SHORT,
-                    volume=round_to(pos.get("Volume"), 1),
+                    volume=round_to(sj_pos.get("Volume"), 1),
                     frozen=0,
-                    price=round_to(pos.get("ContractAverPrice"), 0.0001),
-                    pnl=round_to(pos.get("FlowProfitLoss"), 1),
+                    price=round_to(sj_pos.get("ContractAverPrice"), 0.0001),
+                    pnl=round_to(sj_pos.get("FlowProfitLoss"), 1),
                     yd_volume=0,
                     gateway_name=self.gateway_name,
                 )
-                self.on_position(pos)
+                self.positions[sj_pos.get("Code")] = pos
+        for position in self.positions.values():
+            self.on_position(position)
+
+        self.position_update_time = datetime.now()
 
     def place_order_callback(self, trade: Trade):
         sj_contract: shioaji.contracts.Contract = trade["contract"]
