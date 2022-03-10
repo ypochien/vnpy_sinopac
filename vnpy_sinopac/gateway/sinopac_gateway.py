@@ -570,7 +570,7 @@ class SinopacGateway(BaseGateway):
 
         sj_trade: Trade = self.trades.get(req.orderid, None)
         if sj_trade:
-            if sj_trade.status in [
+            if sj_trade.status.status.value in [
                 sj_constant.Status.Submitted,
                 sj_constant.Status.PendingSubmit,
                 sj_constant.Status.PartFilled,
