@@ -571,10 +571,10 @@ class SinopacGateway(BaseGateway):
         sj_trade: Trade = self.trades.get(req.orderid, None)
         if sj_trade:
             if sj_trade.status in [
-                shioaji.constant.Status.Submitted,
-                shioaji.constant.Status.PendingSubmit,
-                shioaji.constant.Status.PartFilled,
-                shioaji.constant.Status.PreSubmitted,
+                sj_constant.Status.Submitted,
+                sj_constant.Status.PendingSubmit,
+                sj_constant.Status.PartFilled,
+                sj_constant.Status.PreSubmitted,
             ]:
                 self.api.cancel_order(self.trades[req.orderid], timeout=0, cb=cancel_cb)
             else:
