@@ -4,7 +4,7 @@ import time
 from copy import copy
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 import pandas as pd
 import pytz
@@ -12,7 +12,8 @@ import shioaji.constant as sj_constant
 from shioaji.contracts import Contract
 import xxhash
 from shioaji import Shioaji, contracts
-from shioaji.account import StockAccount, FutureAccount
+from shioaji.account import StockAccount, FutureAccount,AccountType
+from shioaji.position import FuturePosition,StockPosition
 from shioaji.order import Status as SinopacStatus
 from shioaji.order import Trade, Deal
 from vnpy.trader.constant import (
@@ -64,14 +65,14 @@ PRICETYPE_SINOPAC2VT = {
 PRICETYPE_FUT_VT2SINOPAC: Dict[OrderType, Any] = {
     OrderType.MARKET: (
         sj_constant.FuturesPriceType.MKP,
-        sj_constant.FuturesOrderType.ROD,
+        sj_constant.OrderType.ROD,
     ),
     OrderType.LIMIT: (
         sj_constant.FuturesPriceType.LMT,
-        sj_constant.FuturesOrderType.ROD,
+        sj_constant.OrderType.ROD,
     ),
-    OrderType.FAK: (sj_constant.FuturesPriceType.LMT, sj_constant.FuturesOrderType.IOC),
-    OrderType.FOK: (sj_constant.FuturesPriceType.LMT, sj_constant.FuturesOrderType.FOK),
+    OrderType.FAK: (sj_constant.FuturesPriceType.LMT, sj_constant.OrderType.IOC),
+    OrderType.FOK: (sj_constant.FuturesPriceType.LMT, sj_constant.OrderType.FOK),
 }
 
 OFFSET_FUT_SINOPAC2VT = {
@@ -83,18 +84,18 @@ OFFSET_FUT_SINOPAC2VT = {
 OFFSET_FUT_VT2SINOPAC = {v: k for k, v in OFFSET_FUT_SINOPAC2VT.items()}
 
 OFFSET_STK_VT2SINOPAC: Dict[Offset, Any] = {
-    Offset.NONE: (sj_constant.StockOrderCond.Cash, sj_constant.StockFirstSell.No),
+    Offset.NONE: (sj_constant.StockOrderCond.Cash, sj_constant.DayTrade.No),
     Offset.OPEN: (
         sj_constant.StockOrderCond.MarginTrading,
-        sj_constant.StockFirstSell.No,
+        sj_constant.DayTrade.No,
     ),
     Offset.CLOSE: (
         sj_constant.StockOrderCond.ShortSelling,
-        sj_constant.StockFirstSell.No,
+        sj_constant.DayTrade.No,
     ),
     Offset.CLOSETODAY: (
         sj_constant.StockOrderCond.Cash,
-        sj_constant.StockFirstSell.Yes,
+        sj_constant.DayTrade.Yes,
     ),
     Offset.CLOSEYESTERDAY: (None, None),
 }
@@ -130,8 +131,9 @@ class SinopacGateway(BaseGateway):
 
     default_name: str = "Sinopac"
     default_setting: Dict[str, str] = {
-        "登入帳號": "",
-        "密碼": "",
+        "連接": ["模擬環境","正式環境"],
+        "API_KEY": "",
+        "SECRET_KEY": "",
         "憑證檔案路徑": "",
         "憑證密碼": "",
         "預設現貨帳號": "0",
@@ -143,7 +145,7 @@ class SinopacGateway(BaseGateway):
     def __init__(self, event_engine, gateway_name: str) -> None:
         """初始化"""
         super().__init__(event_engine, gateway_name)
-        self.api: Shioaji = Shioaji()
+        self.api: Optional[Shioaji] = None
 
         self.code2contract: Dict[str, Contract] = {}  # str map sj contract
         self.subscribed = set()  # for subscribe set
@@ -152,12 +154,6 @@ class SinopacGateway(BaseGateway):
         self.trades: Dict[str, Trade] = {}  # for sj
         self.positions: Dict[str, PositionData] = {}  # for on_position
         self.position_update_time = datetime.now()  # 最後更新損益時間
-
-        self.api.set_order_callback(self.relay_callback)
-        self.api.quote.set_on_tick_fop_v1_callback(self.tick_v1_callback)
-        self.api.quote.set_on_tick_stk_v1_callback(self.tick_v1_callback)
-        self.api.quote.set_on_bidask_fop_v1_callback(self.bidask_v1_callback)
-        self.api.quote.set_on_bidask_stk_v1_callback(self.bidask_v1_callback)
 
     def tick_v1_callback(self, _, tick) -> None:
         one_tick = self.ticks.get(tick.code, None)
@@ -227,24 +223,22 @@ class SinopacGateway(BaseGateway):
         # self.write_log(
         #     f"relay_cb {topic} -{relay_data['order']['id']} {relay_data['operation']}"
         # )
-        if topic in [sj_constant.OrderState.FOrder, sj_constant.OrderState.TFTOrder]:
-            self.impl_order(relay_data)
-        elif topic == sj_constant.OrderState.FDeal:
+        if topic == sj_constant.OrderState.FuturesOrder:
+            self.impl_order(self.api.futopt_account,relay_data)
+        elif topic == sj_constant.OrderState.StockOrder:
+            self.impl_order(self.api.stock_account,relay_data)
+        elif topic == sj_constant.OrderState.FuturesDeal:
             self.impl_deal(self.api.futopt_account, relay_data)
-        elif topic == sj_constant.OrderState.TFTDeal:
+        elif topic == sj_constant.OrderState.StockDeal:
             self.impl_deal(self.api.stock_account, relay_data)
 
-    def impl_order(self, relay_data):
+    def impl_order(self, account, relay_data):
         orderid = relay_data["order"]["id"]
         order_data: OrderData = self.orders.get(orderid, None)
         sj_trade: Trade = self.trades.get(orderid, None)
-        acc_type = relay_data["order"]["account"]["account_type"]  # "F" or "S"
 
         if sj_trade is None:
             seq_no = relay_data["order"]["seqno"]
-            account = (
-                self.api.stock_account if acc_type == "S" else self.api.futopt_account
-            )
             sj_trade = self.get_trade_by_seqno(account, seq_no)
             self.trades[orderid] = sj_trade
         if order_data is None:
@@ -265,7 +259,7 @@ class SinopacGateway(BaseGateway):
                 OFFSET_STK_SINOPAC2VT[
                     (relay_data["order"]["order_cond"], sj_constant.StockFirstSell.No)
                 ]
-                if acc_type == "S"
+                if account.account_type == AccountType.Stock
                 else OFFSET_FUT_SINOPAC2VT[relay_data["order"]["oc_type"]]
             )
             order_data.price = round_to(relay_data["order"]["price"], 0.00001)
@@ -401,21 +395,34 @@ class SinopacGateway(BaseGateway):
 
     def connect(self, setting: dict) -> None:
         """連接 Shioaji"""
-        userid: str = setting["登入帳號"]
-        password: str = setting["密碼"]
+        simulation = False if "正式環境" ==  setting.get("連接","模擬環境") else True
+        self.api = Shioaji(simulation=simulation)
+        self.api.set_order_callback(self.relay_callback)
+        self.api.quote.set_on_tick_fop_v1_callback(self.tick_v1_callback)
+        self.api.quote.set_on_tick_stk_v1_callback(self.tick_v1_callback)
+        self.api.quote.set_on_bidask_fop_v1_callback(self.bidask_v1_callback)
+        self.api.quote.set_on_bidask_stk_v1_callback(self.bidask_v1_callback)
+
+        api_key: str = setting["API_KEY"]
+        secret_key: str = setting["SECRET_KEY"]
         try:
-            self.api.login(userid, password, contracts_cb=self.query_contract)
+            self.api.login(api_key, secret_key, contracts_cb=self.query_contract,)
         except Exception as exc:
             self.write_log(f"登入失败. [{exc}]")
             return
-        self.write_log(f"登入成功. [{userid}]")
+        self.write_log(f"登入成功.")
+        person_id = None
         for acc in self.api.list_accounts():
-            self.write_log(acc)
+            if person_id == None:
+                person_id = acc.person_id
+            acc_type = "期貨帳號" if acc.broker_id.startswith("F") else "股票帳號"
+            msg = f"{acc_type}: ID {acc.person_id} 姓名 {acc.username} 帳號 {acc.broker_id}-{acc.account_id}"
+            self.write_log(msg)
         self.register_all_event()
         self.select_default_account(setting.get("預設現貨帳號", 0), setting.get("預設期貨帳號", 0))
         if setting["憑證檔案路徑"] != "":
-            self.api.activate_ca(setting["憑證檔案路徑"], setting["憑證密碼"], setting["登入帳號"])
-            self.write_log(f"{setting.get('登入帳號')} 憑證 已啟用.")
+            self.api.activate_ca(setting["憑證檔案路徑"], setting["憑證密碼"], person_id)
+            self.write_log(f"ID: {person_id} 憑證 已啟用.")
 
     def update_trades(self, reload=False):
         def convert_deal2vntrade(vn_order: OrderData, sjdeal: Deal) -> TradeData:
@@ -438,8 +445,9 @@ class SinopacGateway(BaseGateway):
             if sjtrade.order.account.broker_id.startswith("F"):
                 vt_offset = OFFSET_FUT_SINOPAC2VT[sjtrade.order.octype]
             else:
+                day_trade = sj_constant.DayTrade.Yes if sjtrade.order.daytrade_short else sj_constant.DayTrade.No
                 vt_offset = OFFSET_STK_SINOPAC2VT[
-                    (sjtrade.order.order_cond, sjtrade.order.first_sell)
+                    (sjtrade.order.order_cond, day_trade)
                 ]
             vn_order_data: OrderData = OrderData(
                 symbol=sjtrade.contract.code,
@@ -461,7 +469,7 @@ class SinopacGateway(BaseGateway):
             return vn_order_data
 
         if reload:
-            self.api.update_status()
+            self.api.update_status(timeout=0)
         for sj_trade in self.api.list_trades():
             vn_order = convert_sjtrade2vnorder(sj_trade)
             self.on_order(vn_order)
@@ -513,7 +521,9 @@ class SinopacGateway(BaseGateway):
             )
             volume = sj_pos.quantity
             total_qty = sj_pos.quantity
-            yd_qty = sj_pos.yd_quantity
+            yd_qty = 0            
+            if isinstance(positions,StockPosition):
+                yd_qty = sj_pos.yd_quantity
             pos = PositionData(
                 symbol=sj_pos.code,
                 exchange=Exchange.LOCAL,
@@ -526,6 +536,9 @@ class SinopacGateway(BaseGateway):
                 gateway_name=self.gateway_name,
             )
             self.positions[sj_pos.code] = pos
+
+        for position in self.positions.values():
+            self.on_position(position)            
 
     def get_contract_snapshot(self, contract):
         self.tick_snapshot(contract, Exchange.LOCAL)
@@ -603,35 +616,11 @@ class SinopacGateway(BaseGateway):
             position.pnl = 0
 
         # Stock account
-        self.api.list_positions(timeout=0, cb=self.list_position_callback)
-
+        
+        # [FuturePosition(id=0, code='TXFA3', direction=<Action.Buy: 'Buy'>, quantity=3, price=14544.0, last_price=14543.0, pnl=-600.0)]
         # Future account
-        """Todo : 當期貨查詢改為sw後，記得修正"""
-        if self.api.futopt_account:
-            try:
-                all_pos = self.api.get_account_openposition(query_type="1").data()
-            except AttributeError:
-                all_pos = []
-                self.write_log("get_account_open_position fail.")
-            for sj_pos in all_pos:
-                if len(sj_pos.items()) == 0:
-                    continue
-                pos = PositionData(
-                    symbol=f"{sj_pos.get('Code')}",
-                    exchange=Exchange.LOCAL,
-                    direction=Direction.LONG
-                    if sj_pos.get("OrderBS") == "B"
-                    else Direction.SHORT,
-                    volume=round_to(sj_pos.get("Volume"), 1),
-                    frozen=0,
-                    price=round_to(sj_pos.get("ContractAverPrice"), 0.0001),
-                    pnl=round_to(sj_pos.get("FlowProfitLoss"), 1),
-                    yd_volume=0,
-                    gateway_name=self.gateway_name,
-                )
-                self.positions[sj_pos.get("Code")] = pos
-        for position in self.positions.values():
-            self.on_position(position)
+        self.api.list_positions(account=self.api.stock_account,timeout=0, cb=self.list_position_callback)
+        self.api.list_positions(account=self.api.futopt_account,timeout=0, cb=self.list_position_callback)
 
         self.position_update_time = datetime.now()
 

@@ -21,7 +21,7 @@ classifiers=[
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.11"
-shioaji= "<1.0"
+shioaji= "^1.0.0"
 pandas = "^1.4.1"
 
 [tool.poetry.dev-dependencies]
