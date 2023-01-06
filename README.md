@@ -6,13 +6,24 @@
 
 # Sinopac API - Shioaji 交易接口 for VeighNa框架
 
+# ⚠️ Warning ⚠️
+* ⚠️ 如果你的 shioaji 為 0.x 版本，請安裝 vnpy_sinopac v1.5
+* ⚠️ 如果你的 shioaji 為 1.0 版本之後，請安裝 vnpy_sinopac v2.0 之後的版本
+```
+import shioaji
+print(shioaji.__version__)
+```
+
+
+## 
 - Sinopac API - shioaji - https://sinotrade.github.io/
 - VeighNa (VNPY) - https://github.com/vnpy/vnpy/
 - vnpy_sinopac - https://github.com/ypochien/vnpy_sinopac
 
 ## Requirement
-* VeighNa 3.0 
-* Python 3.8 / 3.7 (建議用 Anaconda)
+* Shioaji >= 1.0
+* VeighNa 3.0~3.5
+* Python 3.10 / 3.9 / 3.8 / 3.7  (建議用 Anaconda)
 ## Installation
 ```
 pip install vnpy_sinopac
@@ -21,6 +32,13 @@ pip install vnpy_sinopac
 ```
 python scripy/run.py
 ```
+or add below
+```
+from vnpy_sinopac import SinopacGateway
+
+main_engine.add_gateway(SinopacGateway)
+```
+
 
 ## 關於下單方式
 ### 股票
