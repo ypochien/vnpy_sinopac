@@ -20,8 +20,8 @@ classifiers=[
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.9"
-shioaji= "^0.3.*"
+python = ">=3.8,<3.11"
+shioaji= ">=0.4,<=0.6"
 pandas = "^1.4.1"
 
 [tool.poetry.dev-dependencies]
