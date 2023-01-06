@@ -636,6 +636,7 @@ class SinopacGateway(BaseGateway):
         self.position_update_time = datetime.now()
 
     def place_order_callback(self, trade: Trade):
+        
         sj_contract: Contract = trade["contract"]
         order_data: OrderData = self.orders.get(trade.order.id, None)
 

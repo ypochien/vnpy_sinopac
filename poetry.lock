@@ -20,6 +20,21 @@ tests = ["attrs[tests-no-zope]", "zope.interface"]
 tests-no-zope = ["cloudpickle", "cloudpickle", "hypothesis", "hypothesis", "mypy (>=0.971,<0.990)", "mypy (>=0.971,<0.990)", "pympler", "pympler", "pytest (>=4.3.0)", "pytest (>=4.3.0)", "pytest-mypy-plugins", "pytest-mypy-plugins", "pytest-xdist[psutil]", "pytest-xdist[psutil]"]
 
 [[package]]
+name = "base58"
+version = "2.1.1"
+description = "Base58 and Base58Check implementation."
+category = "main"
+optional = false
+python-versions = ">=3.5"
+files = [
+    {file = "base58-2.1.1-py3-none-any.whl", hash = "sha256:11a36f4d3ce51dfc1043f3218591ac4eb1ceb172919cebe05b52a5bcc8d245c2"},
+    {file = "base58-2.1.1.tar.gz", hash = "sha256:c5d0cb3f5b6e81e8e35da5754388ddcc6d0d14b6c6a132cb93d69ed580a7278c"},
+]
+
+[package.extras]
+tests = ["PyHamcrest (>=2.0.2)", "mypy", "pytest (>=4.6)", "pytest-benchmark", "pytest-cov", "pytest-flake8"]
+
+[[package]]
 name = "black"
 version = "22.12.0"
 description = "The uncompromising code formatter."
@@ -678,6 +693,33 @@ dotenv = ["python-dotenv (>=0.10.4)"]
 email = ["email-validator (>=1.0.3)"]
 
 [[package]]
+name = "pynacl"
+version = "1.5.0"
+description = "Python binding to the Networking and Cryptography (NaCl) library"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "PyNaCl-1.5.0-cp36-abi3-macosx_10_10_universal2.whl", hash = "sha256:401002a4aaa07c9414132aaed7f6836ff98f59277a234704ff66878c2ee4a0d1"},
+    {file = "PyNaCl-1.5.0-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_24_aarch64.whl", hash = "sha256:52cb72a79269189d4e0dc537556f4740f7f0a9ec41c1322598799b0bdad4ef92"},
+    {file = "PyNaCl-1.5.0-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a36d4a9dda1f19ce6e03c9a784a2921a4b726b02e1c736600ca9c22029474394"},
+    {file = "PyNaCl-1.5.0-cp36-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl", hash = "sha256:0c84947a22519e013607c9be43706dd42513f9e6ae5d39d3613ca1e142fba44d"},
+    {file = "PyNaCl-1.5.0-cp36-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:06b8f6fa7f5de8d5d2f7573fe8c863c051225a27b61e6860fd047b1775807858"},
+    {file = "PyNaCl-1.5.0-cp36-abi3-musllinux_1_1_aarch64.whl", hash = "sha256:a422368fc821589c228f4c49438a368831cb5bbc0eab5ebe1d7fac9dded6567b"},
+    {file = "PyNaCl-1.5.0-cp36-abi3-musllinux_1_1_x86_64.whl", hash = "sha256:61f642bf2378713e2c2e1de73444a3778e5f0a38be6fee0fe532fe30060282ff"},
+    {file = "PyNaCl-1.5.0-cp36-abi3-win32.whl", hash = "sha256:e46dae94e34b085175f8abb3b0aaa7da40767865ac82c928eeb9e57e1ea8a543"},
+    {file = "PyNaCl-1.5.0-cp36-abi3-win_amd64.whl", hash = "sha256:20f42270d27e1b6a29f54032090b972d97f0a1b0948cc52392041ef7831fee93"},
+    {file = "PyNaCl-1.5.0.tar.gz", hash = "sha256:8ac7448f09ab85811607bdd21ec2464495ac8b7c66d146bf545b0f08fb9220ba"},
+]
+
+[package.dependencies]
+cffi = ">=1.4.1"
+
+[package.extras]
+docs = ["sphinx (>=1.6.5)", "sphinx-rtd-theme"]
+tests = ["hypothesis (>=3.27.0)", "pytest (>=3.2.1,!=3.3.0)"]
+
+[[package]]
 name = "pysolace"
 version = "0.9.22"
 description = "python solclient"
@@ -824,38 +866,40 @@ tornado = ["tornado (>=5)"]
 
 [[package]]
 name = "shioaji"
-version = "0.3.6.dev7"
+version = "0.5.0.dev2"
 description = "Sinopac All New Trading Api."
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "shioaji-0.3.6.dev7-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:f05ebcd3be56b50c2a8b38cb81ac7d5cb02fd415d9e64fc5b675f94814a839ef"},
-    {file = "shioaji-0.3.6.dev7-cp310-cp310-manylinux_2_24_x86_64.whl", hash = "sha256:ff26d60511ca013e9c9106f0db84ef6ede40e59f48cafbd3f9a8e077d49c3c80"},
-    {file = "shioaji-0.3.6.dev7-cp310-cp310-win_amd64.whl", hash = "sha256:e617d15bc7f6fff809a861fb841da2ea318da22b4598af6cdf47a236410e7cdd"},
-    {file = "shioaji-0.3.6.dev7-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:2a99f9a22e5cccd6501b03904cc466b3c0f519373735e2dfd79bff2aa5998e8e"},
-    {file = "shioaji-0.3.6.dev7-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:cd60ff770618636c0567ff4129c0f8e7351beef0d930fddc954158b61305e2e1"},
-    {file = "shioaji-0.3.6.dev7-cp36-cp36m-manylinux_2_24_x86_64.whl", hash = "sha256:bae13938d51cef9d186d3f0412477533b48979af597f15ac29092296bf568869"},
-    {file = "shioaji-0.3.6.dev7-cp36-cp36m-win_amd64.whl", hash = "sha256:cb44b488edc22865d613cdf22dee0f4241506b2228c0fdf5265a46c434b48354"},
-    {file = "shioaji-0.3.6.dev7-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:8b8f70110ce58182bcf6e065e19c845b14bf1885c312f8fa1ca5f3fb39761020"},
-    {file = "shioaji-0.3.6.dev7-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:af11ad512809d44d4773644b0ff68d734f66adca096dee5a83ab92248a5c5589"},
-    {file = "shioaji-0.3.6.dev7-cp37-cp37m-manylinux_2_24_x86_64.whl", hash = "sha256:2838918d8b42c19facdaeb91ad6a1251d88df1ba4500ac52d412ad37b21d064f"},
-    {file = "shioaji-0.3.6.dev7-cp37-cp37m-win_amd64.whl", hash = "sha256:b2ff6b37b4580ac79fa65d46875bd9ffa3ea8a2aae425ee1399f9c1b86157805"},
-    {file = "shioaji-0.3.6.dev7-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:719ed71b88f3bd9c9b5cab56b88f50bc2b1056130ef3c68b5c399bc45e62b6f1"},
-    {file = "shioaji-0.3.6.dev7-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:61ae71a8dca45842721267dae72ec8461875e6db2449f7e723bc8b4a0fbb1240"},
-    {file = "shioaji-0.3.6.dev7-cp38-cp38-manylinux_2_24_x86_64.whl", hash = "sha256:fb7e024043c205c32174ef27a12d825de2855ddcb0239611df81467efa8e5148"},
-    {file = "shioaji-0.3.6.dev7-cp38-cp38-win_amd64.whl", hash = "sha256:1a007ed114cfdcdb0a7cd0e07980502adbde1299a38f20dd0e6995613059f8de"},
-    {file = "shioaji-0.3.6.dev7-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:2230c96014ae9633c7465b3a8d9f3d0bc1d5bb8f180966d934fb1849e0695fcf"},
-    {file = "shioaji-0.3.6.dev7-cp39-cp39-manylinux_2_24_x86_64.whl", hash = "sha256:8fcc1940039573a4fc91e2554dca40dcd20c68ce164e9542f6c09bb002e4b5f8"},
-    {file = "shioaji-0.3.6.dev7-cp39-cp39-win_amd64.whl", hash = "sha256:1cc4601901e3fa239b43cef1b5c1dddd01fafc295beafcfeb6abbf16821b69fb"},
+    {file = "shioaji-0.5.0.dev2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:b8dc1320e19d1f6bff854d43cf9924c2f4849fb548d05b03e47d0e5734090b50"},
+    {file = "shioaji-0.5.0.dev2-cp310-cp310-manylinux_2_24_x86_64.whl", hash = "sha256:ccb529d08f2427747784c0cfb5d3b3e0405290920279c2024cab927b0e1ac955"},
+    {file = "shioaji-0.5.0.dev2-cp310-cp310-win_amd64.whl", hash = "sha256:c13a8372e1211cdcda4622e44bc5f5e78576bd171fe55f1e9592ecc535053e11"},
+    {file = "shioaji-0.5.0.dev2-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:2448ddfd4e37d845acfb8acd33e0429f4fc1e305c0416d5cc85f161bfcbc9c44"},
+    {file = "shioaji-0.5.0.dev2-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:5ebb2150a8f15f8efb994018836fc09996378439e0e1b1b05afce0efe0c3b111"},
+    {file = "shioaji-0.5.0.dev2-cp36-cp36m-manylinux_2_24_x86_64.whl", hash = "sha256:4a9362e02446d0d6830ae0768dd9e5de04932328e15789c189c220a5c71362ef"},
+    {file = "shioaji-0.5.0.dev2-cp36-cp36m-win_amd64.whl", hash = "sha256:027bb744598fb29bd8931152956ba34c81c19905d8d6696d0f7fbfae07d9f8ee"},
+    {file = "shioaji-0.5.0.dev2-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:60ec4217a10cce98d80831743fa488b2731459d6de4b5d1d94582e30213dba68"},
+    {file = "shioaji-0.5.0.dev2-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:2271819d2d6ba308837b9a863b17b50114329806cd2c433f1a33c0b1ec6a9ada"},
+    {file = "shioaji-0.5.0.dev2-cp37-cp37m-manylinux_2_24_x86_64.whl", hash = "sha256:ea8e691a400e385cc789a0b6aef4f966db1d18ae9ed7a6a7618b6c21e9bd29dc"},
+    {file = "shioaji-0.5.0.dev2-cp37-cp37m-win_amd64.whl", hash = "sha256:b5163e9a3cbdb6c798d995e2846b2659e3caffae00199745ead830254f200afe"},
+    {file = "shioaji-0.5.0.dev2-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:7d11a2716a454a2ec42fc953f165e6d6286a3db97f7a53c960390c29b4368bf0"},
+    {file = "shioaji-0.5.0.dev2-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:a8f438baf75fec9af1647178d22bb23cbfa1e8e30377e473701d8c1624bc304b"},
+    {file = "shioaji-0.5.0.dev2-cp38-cp38-manylinux_2_24_x86_64.whl", hash = "sha256:9a6c1c2964a424dd3c84a88fd25db1abfc86bcc949e171ed97286097f91f93e2"},
+    {file = "shioaji-0.5.0.dev2-cp38-cp38-win_amd64.whl", hash = "sha256:308eaa0301b6e77ff80874a4714ca979e84ca8deb703ffd36c8f265654ae73cb"},
+    {file = "shioaji-0.5.0.dev2-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:44684ecfcc1438245842e6305068e65ac53d42cc532a2bc744e88bbf53a439c6"},
+    {file = "shioaji-0.5.0.dev2-cp39-cp39-manylinux_2_24_x86_64.whl", hash = "sha256:fe6755f2dec9b0efcd7e1ecd9d4fdd381e405bd2347ba582a706c4eab020a6e2"},
+    {file = "shioaji-0.5.0.dev2-cp39-cp39-win_amd64.whl", hash = "sha256:da0ce3a2fa7c59c356cb8c136ce09b5a0a3373a768e46e18b201cc2cc5565ea8"},
 ]
 
 [package.dependencies]
+base58 = "*"
 cryptography = {version = ">=3.2", markers = "sys_platform == \"darwin\""}
 filelock = "3.4.1"
 importlib-metadata = "*"
 loguru = "0.6.0"
 pydantic = "*"
+pynacl = ">=1.3.0"
 pysolace = "0.9.22"
 requests = "*"
 sentry-sdk = "1.5.12"
@@ -863,7 +907,7 @@ typing-extensions = "*"
 xxhash = "*"
 
 [package.extras]
-speed = ["ciso8601 (>=2.1.3)"]
+speed = ["based58 (>=0.1.1)", "ciso8601 (>=2.1.3)"]
 
 [[package]]
 name = "six"
