@@ -866,30 +866,30 @@ tornado = ["tornado (>=5)"]
 
 [[package]]
 name = "shioaji"
-version = "0.5.0.dev2"
+version = "1.0.0"
 description = "Sinopac All New Trading Api."
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "shioaji-0.5.0.dev2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:b8dc1320e19d1f6bff854d43cf9924c2f4849fb548d05b03e47d0e5734090b50"},
-    {file = "shioaji-0.5.0.dev2-cp310-cp310-manylinux_2_24_x86_64.whl", hash = "sha256:ccb529d08f2427747784c0cfb5d3b3e0405290920279c2024cab927b0e1ac955"},
-    {file = "shioaji-0.5.0.dev2-cp310-cp310-win_amd64.whl", hash = "sha256:c13a8372e1211cdcda4622e44bc5f5e78576bd171fe55f1e9592ecc535053e11"},
-    {file = "shioaji-0.5.0.dev2-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:2448ddfd4e37d845acfb8acd33e0429f4fc1e305c0416d5cc85f161bfcbc9c44"},
-    {file = "shioaji-0.5.0.dev2-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:5ebb2150a8f15f8efb994018836fc09996378439e0e1b1b05afce0efe0c3b111"},
-    {file = "shioaji-0.5.0.dev2-cp36-cp36m-manylinux_2_24_x86_64.whl", hash = "sha256:4a9362e02446d0d6830ae0768dd9e5de04932328e15789c189c220a5c71362ef"},
-    {file = "shioaji-0.5.0.dev2-cp36-cp36m-win_amd64.whl", hash = "sha256:027bb744598fb29bd8931152956ba34c81c19905d8d6696d0f7fbfae07d9f8ee"},
-    {file = "shioaji-0.5.0.dev2-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:60ec4217a10cce98d80831743fa488b2731459d6de4b5d1d94582e30213dba68"},
-    {file = "shioaji-0.5.0.dev2-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:2271819d2d6ba308837b9a863b17b50114329806cd2c433f1a33c0b1ec6a9ada"},
-    {file = "shioaji-0.5.0.dev2-cp37-cp37m-manylinux_2_24_x86_64.whl", hash = "sha256:ea8e691a400e385cc789a0b6aef4f966db1d18ae9ed7a6a7618b6c21e9bd29dc"},
-    {file = "shioaji-0.5.0.dev2-cp37-cp37m-win_amd64.whl", hash = "sha256:b5163e9a3cbdb6c798d995e2846b2659e3caffae00199745ead830254f200afe"},
-    {file = "shioaji-0.5.0.dev2-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:7d11a2716a454a2ec42fc953f165e6d6286a3db97f7a53c960390c29b4368bf0"},
-    {file = "shioaji-0.5.0.dev2-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:a8f438baf75fec9af1647178d22bb23cbfa1e8e30377e473701d8c1624bc304b"},
-    {file = "shioaji-0.5.0.dev2-cp38-cp38-manylinux_2_24_x86_64.whl", hash = "sha256:9a6c1c2964a424dd3c84a88fd25db1abfc86bcc949e171ed97286097f91f93e2"},
-    {file = "shioaji-0.5.0.dev2-cp38-cp38-win_amd64.whl", hash = "sha256:308eaa0301b6e77ff80874a4714ca979e84ca8deb703ffd36c8f265654ae73cb"},
-    {file = "shioaji-0.5.0.dev2-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:44684ecfcc1438245842e6305068e65ac53d42cc532a2bc744e88bbf53a439c6"},
-    {file = "shioaji-0.5.0.dev2-cp39-cp39-manylinux_2_24_x86_64.whl", hash = "sha256:fe6755f2dec9b0efcd7e1ecd9d4fdd381e405bd2347ba582a706c4eab020a6e2"},
-    {file = "shioaji-0.5.0.dev2-cp39-cp39-win_amd64.whl", hash = "sha256:da0ce3a2fa7c59c356cb8c136ce09b5a0a3373a768e46e18b201cc2cc5565ea8"},
+    {file = "shioaji-1.0.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:92cd51b430847edfceac302cf7ff37e86603e63ba1f8b84300f430ff641cf60c"},
+    {file = "shioaji-1.0.0-cp310-cp310-manylinux_2_24_x86_64.whl", hash = "sha256:3af27cabe2412c091f345f99039318e977a684f906b12c3e426d8eed1471b296"},
+    {file = "shioaji-1.0.0-cp310-cp310-win_amd64.whl", hash = "sha256:c922c043636d61c41b3a70267c5482d2fab9a288ba42fb7d4476a5db7834d5e6"},
+    {file = "shioaji-1.0.0-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:55b23cec6d6b84e6c0f5296b91dafd7486ec157bb00d1dc6b5e96904bd458433"},
+    {file = "shioaji-1.0.0-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:e78a55001bfaf479901ad95b1f480538122140741815d41c6ffb3975ed200848"},
+    {file = "shioaji-1.0.0-cp36-cp36m-manylinux_2_24_x86_64.whl", hash = "sha256:b1352f5041ec6405215d78337a5eb4c2d1abf219c681daaa1e4e9175d21f1701"},
+    {file = "shioaji-1.0.0-cp36-cp36m-win_amd64.whl", hash = "sha256:354214efbb45e5f2ddb1e1063af805831739cb58c21eca92e76863382ce0f955"},
+    {file = "shioaji-1.0.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:bdc80ee1722741b7fc3e3de763d16f187cb2fdbaec9eb7384b73dd010d89c557"},
+    {file = "shioaji-1.0.0-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:5a55df8243c7cb2afff9861910aa6cf1e3cc0cd7f546f58c7cacb82343b4f8ce"},
+    {file = "shioaji-1.0.0-cp37-cp37m-manylinux_2_24_x86_64.whl", hash = "sha256:af5123a80ce1d3ba2544e22725ca557228a5f4bb6cf9c7575a9f2e62e33a74bb"},
+    {file = "shioaji-1.0.0-cp37-cp37m-win_amd64.whl", hash = "sha256:99ff21b140c9f51da48221ccfcf2a6de38a156ac81d46453da66341383bba2c4"},
+    {file = "shioaji-1.0.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:3f40181f62e225edb56bdb329c96cb449c30ff0bc061961c79887e0a38bd1020"},
+    {file = "shioaji-1.0.0-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:34ca342f947a44ade1b81b11454258612f95b8ff76a2ebe799af665c1cac1cf3"},
+    {file = "shioaji-1.0.0-cp38-cp38-manylinux_2_24_x86_64.whl", hash = "sha256:f7ec518a37ab1278940b82fc40056510fd0c2788649a81be23a65abe6788512b"},
+    {file = "shioaji-1.0.0-cp38-cp38-win_amd64.whl", hash = "sha256:7fea81d80b275081b8d174e2b3f06bc10cea4cb07a95b4634ffc48219d8ddd14"},
+    {file = "shioaji-1.0.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:2f0761bcbf1e20c6fb66edd06be6fa65a885ad8ef85c315495910441db7d3d50"},
+    {file = "shioaji-1.0.0-cp39-cp39-manylinux_2_24_x86_64.whl", hash = "sha256:d36c96779e2b54b6c573699e77c3760f91984bd458ba2cbead57dcedf7f9151d"},
+    {file = "shioaji-1.0.0-cp39-cp39-win_amd64.whl", hash = "sha256:9361fff3943ac35e6302a4ffc0762d278fd78ce0ea5b9e5b9f12c9f15ac23796"},
 ]
 
 [package.dependencies]
@@ -1110,4 +1110,4 @@ requirements-deprecated-finder = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.11"
-content-hash = "b1a76cdbcc9465796d23902d6078773d901e63064c201e6ab6c349b12c8ce28f"
+content-hash = "ac5d475ddf690320f3b7fa263f5ec925daa102e64112bd6e26246ddcbbcd41a0"
