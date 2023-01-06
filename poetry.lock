@@ -1066,4 +1066,4 @@ requirements-deprecated-finder = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.11"
-content-hash = "4a2f6a892383cee3031b4d461a370921dd792f2d78072d5259d7016fc334ae33"
+content-hash = "b1a76cdbcc9465796d23902d6078773d901e63064c201e6ab6c349b12c8ce28f"
