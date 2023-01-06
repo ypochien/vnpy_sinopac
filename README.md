@@ -30,7 +30,7 @@ pip install vnpy_sinopac
 ```
 ## Quickstarts
 ```
-python scripy/run.py
+python script/run.py
 ```
 or add below
 ```
