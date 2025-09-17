@@ -413,13 +413,13 @@ class SinopacGateway(BaseGateway):
         self.write_log(f"登入成功.")
         person_id = None
         for acc in self.api.list_accounts():
-            if person_id == None:
+            if person_id is None:
                 person_id = acc.person_id
             acc_type = "期貨帳號" if acc.broker_id.startswith("F") else "股票帳號"
             msg = f"{acc_type}: ID {acc.person_id} 姓名 {acc.username} 帳號 {acc.broker_id}-{acc.account_id}"
             self.write_log(msg)
-        self.register_all_event()
         self.select_default_account(setting.get("預設現貨帳號", 0), setting.get("預設期貨帳號", 0))
+        self.register_all_event()
         if setting["憑證檔案路徑"] != "":
             self.api.activate_ca(setting["憑證檔案路徑"], setting["憑證密碼"], person_id)
             self.write_log(f"ID: {person_id} 憑證 已啟用.")
@@ -608,7 +608,6 @@ class SinopacGateway(BaseGateway):
 
     def query_position(self) -> None:
         """Query hold positions"""
-        # Clear all Pos
         for position in self.positions.values():
             position.volume = 0
             position.frozen = 0
@@ -616,11 +615,16 @@ class SinopacGateway(BaseGateway):
             position.pnl = 0
 
         # Stock account
-        
+
         # [FuturePosition(id=0, code='TXFA3', direction=<Action.Buy: 'Buy'>, quantity=3, price=14544.0, last_price=14543.0, pnl=-600.0)]
         # Future account
-        self.api.list_positions(account=self.api.stock_account,timeout=0, cb=self.list_position_callback)
-        self.api.list_positions(account=self.api.futopt_account,timeout=0, cb=self.list_position_callback)
+        if self.api.stock_account is not None:
+            self.write_log(f"Query position stock account {self.api.stock_account}")
+            self.api.list_positions(account=self.api.stock_account,timeout=0, cb=self.list_position_callback)
+        
+        if self.api.futopt_account is not None:
+            self.write_log(f"Query position future account {self.api.futopt_account}")
+            self.api.list_positions(account=self.api.futopt_account,timeout=0, cb=self.list_position_callback)
 
         self.position_update_time = datetime.now()
 
