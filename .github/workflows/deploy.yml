@@ -1,5 +1,8 @@
 name: Deploy
-on: [push]
+on: 
+  push:
+  release:
+    types: [published]
 jobs:
   test:
     runs-on: ${{ matrix.os }}
@@ -32,7 +35,7 @@ jobs:
 
   build_publish:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') && github.repository == 'ypochien/vnpy_sinopac'
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v') && github.repository == 'ypochien/vnpy_sinopac'
     needs: [test]
     steps:
       - uses: actions/checkout@v4
@@ -45,6 +48,24 @@ jobs:
       - name: Install Dependency
         run: |
           uv sync
+      - name: Verify version matches tag
+        run: |
+          python -c "
+          import re
+          from pathlib import Path
+          
+          # 從 tag 獲取版本
+          tag = '${{ github.ref_name }}'
+          tag_version = tag.lstrip('v')
+          
+          # 從 pyproject.toml 獲取版本
+          content = Path('pyproject.toml').read_text()
+          file_version = re.search(r'version = \"([^\"]+)\"', content).group(1)
+          
+          if tag_version != file_version:
+              raise ValueError(f'Tag version {tag_version} != file version {file_version}')
+          print(f'✅ Version {tag_version} verified')
+          "
       - name: Publish package to PyPI
         run: |
           uv build
