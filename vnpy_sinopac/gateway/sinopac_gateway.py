@@ -743,11 +743,79 @@ class SinopacGateway(BaseGateway):
         if interval == Interval.MINUTE:
             minute_bars = self.api.kbars(sj_contract, start, end)
             df = pl.DataFrame({**minute_bars})
-            df = df.with_columns(pl.col("ts").str.strptime(pl.Datetime))
-            if df is not None and len(df) > 0:
-                for row in df.iter_rows(named=True):
-                    dt = row["ts"].to_pydatetime()
-                    dt = TW_TZ.localize(dt)
+            
+            # 檢查是否有資料
+            if df is None or len(df) == 0:
+                return data
+            
+            # 檢查 ts 欄位型別並轉換
+            if "ts" in df.columns:
+                ts_dtype = df["ts"].dtype
+                
+                # 先檢查資料內容
+                if len(df) > 0:
+                    ts_sample = df["ts"][0]
+                    
+                    if ts_dtype == pl.Int64 or ts_dtype == pl.Float64:
+                        # 根據數值大小判斷時間戳單位
+                        # Unix 時間戳: 秒級約 10 位數，毫秒級約 13 位數，微秒級約 16 位數，奈秒級約 19 位數
+                        if ts_sample > 10**18:  # 奈秒
+                            df = df.with_columns(
+                                (pl.col("ts") // 10**6).cast(pl.Datetime("ms"))
+                            )
+                        elif ts_sample > 10**15:  # 微秒
+                            df = df.with_columns(
+                                (pl.col("ts") // 10**3).cast(pl.Datetime("ms"))
+                            )
+                        elif ts_sample > 10**12:  # 毫秒
+                            df = df.with_columns(
+                                pl.col("ts").cast(pl.Datetime("ms"))
+                            )
+                        else:  # 秒
+                            df = df.with_columns(
+                                (pl.col("ts") * 1000).cast(pl.Datetime("ms"))
+                            )
+                    elif ts_dtype == pl.Utf8 or ts_dtype == pl.String:
+                        # 如果是字串，解析為 datetime
+                        # 嘗試多種日期格式
+                        try:
+                            df = df.with_columns(pl.col("ts").str.strptime(pl.Datetime))
+                        except:
+                            try:
+                                df = df.with_columns(pl.col("ts").str.strptime(pl.Datetime, "%Y-%m-%d %H:%M:%S"))
+                            except:
+                                self.write_log(f"無法解析時間格式: {ts_sample}")
+                                return data
+                    elif ts_dtype in [pl.Datetime, pl.Datetime("ms"), pl.Datetime("us"), pl.Datetime("ns")]:
+                        # 已經是 datetime 型別，不需要轉換
+                        pass
+                    else:
+                        self.write_log(f"不支援的時間戳型別: {ts_dtype}")
+                        return data
+            
+            # 迭代處理資料
+            for row in df.iter_rows(named=True):
+                try:
+                    dt = row["ts"]
+                    if hasattr(dt, 'to_pydatetime'):
+                        dt = dt.to_pydatetime()
+                    elif isinstance(dt, (int, float)):
+                        # 如果還是數字，表示轉換失敗，嘗試手動轉換
+                        if dt > 10**12:  # 毫秒
+                            dt = datetime.fromtimestamp(dt / 1000)
+                        else:  # 秒
+                            dt = datetime.fromtimestamp(dt)
+                    
+                    # 確保 dt 是 datetime 物件
+                    if not isinstance(dt, datetime):
+                        self.write_log(f"無法轉換時間: {row['ts']}")
+                        continue
+                    
+                    # 加上時區資訊
+                    if dt.tzinfo is None:
+                        dt = TW_TZ.localize(dt)
+                    else:
+                        dt = dt.astimezone(TW_TZ)
 
                     bar = BarData(
                         symbol=symbol,
@@ -764,4 +832,7 @@ class SinopacGateway(BaseGateway):
                         gateway_name=self.gateway_name,
                     )
                     data.append(bar)
+                except Exception as e:
+                    self.write_log(f"處理K線資料時發生錯誤: {e}, row: {row}")
+                    continue
         return data
