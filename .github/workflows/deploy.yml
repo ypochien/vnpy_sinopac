@@ -6,16 +6,18 @@ jobs:
     strategy:
       matrix: 
         os: [ubuntu-latest, windows-latest]
-        python-version:  [3.8]
+        python-version: ["3.13"]
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v4
       - name: Setup Python  
-        uses: actions/setup-python@master
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
       - name: Install Dependency
         run: |
-          make install
+          uv sync
 #      - name: Generate coverage report
 #        run: |
 #          make test-cov
@@ -33,15 +35,17 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') && github.repository == 'ypochien/vnpy_sinopac'
     needs: [test]
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v4
       - name: Setup Python  
-        uses: actions/setup-python@master
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: "3.13"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
       - name: Install Dependency
         run: |
-          make install-poetry
+          uv sync
       - name: Publish package to PyPI
         run: |
-          poetry build
-          poetry publish --username __token__ --password ${{ secrets.PYPI_API_TOKEN }}
+          uv build
+          uv publish --token ${{ secrets.PYPI_API_TOKEN }}
