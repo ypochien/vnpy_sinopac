@@ -1,49 +1,75 @@
-[tool.poetry]
+[project]
 name = "vnpy_sinopac"
-version = "0.0.0"
-description = "The best trading API - Shioaji gateway with VNPY."
-authors = ["ypochien"]
-license = "MIT"
-readme="README.md"
-repository="https://github.com/ypochien/vnpy_sinopac"
-keywords=["quant","quantitative","investment","trading","algotrading"]
-classifiers=[
-    "Development Status :: 5 - Production/Stable",
+version = "4.0.3"
+description = "Sinopac Securities - Shioaji api gateway for VeighNa quant trading framework."
+authors = [
+    {name = "ypochien", email = "ypochien@gmail.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+keywords = ["quant", "quantitative", "investment", "trading", "algotrading"]
+classifiers = [
+    "Development Status :: 4 - Beta",
     "Operating System :: Microsoft :: Windows",
-    "Operating System :: POSIX :: Linux",
+    "Operating System :: Unix",
+    "Operating System :: POSIX",
     "Operating System :: MacOS",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Office/Business :: Financial :: Investment",
     "Programming Language :: Python :: Implementation :: CPython",
     "License :: OSI Approved :: MIT License",
+    "Natural Language :: Chinese (Traditional)",
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.8,<3.11"
-shioaji= "^1.0.0"
-pandas = "^1.4.1"
+dependencies = [
+    "shioaji>=1.0.0",
+    "polars>=0.20.0",
+    "importlib_metadata",
+    "wmi; sys_platform == 'win32'",
+]
 
-[tool.poetry.dev-dependencies]
-pytest = "^7.0.1"
-black = "^22.1.0"
-isort = "^5.10.1"
+[project.urls]
+Documentation = "https://sinotrade.github.io/"
+"Release notes" = "https://sinotrade.github.io/release/"
+Funding = "https://sjapi.tw"
+Source = "https://github.com/ypochien/vnpy_sinopac"
+Homepage = "https://github.com/ypochien/vnpy_sinopac"
 
-[tool.poetry.extras]
-pipfile_deprecated_finder = ["pipreqs", "requirementslib", "pip-shims<=0.3.4"]
-requirements_deprecated_finder = ["pipreqs", "pip-api"]
-colors = ["colorama"]
-plugins = ["setuptools"]
-
-[tool.poetry-dynamic-versioning]
-enable = true
-vcs = "git"
-format = "v{base}"
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.1",
+    "black>=22.1.0",
+    "isort>=5.10.1",
+    "pygments>=2.0.0",
+]
+test = [
+    "pytest>=7.0.1",
+    "pygments>=2.0.0",
+]
 
 [tool.isort]
 profile = "black"
 multi_line_output = 3
 
 [build-system]
-requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+test = [
+    "pytest>=7.0.1",
+    "pygments>=2.19.2",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["vnpy_sinopac"]
+include = [
+    "vnpy_sinopac/*.dll",
+    "vnpy_sinopac/*.so", 
+    "vnpy_sinopac/*.pyd",
+]
