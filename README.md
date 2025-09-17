@@ -11,8 +11,8 @@
 - vnpy_sinopac - https://github.com/ypochien/vnpy_sinopac
 
 ## Requirement
-* VeighNa 3.0 
-* Python 3.8 / 3.7 (建議用 Anaconda)
+* VeighNa 4.0 
+* Python 3.13
 ## Installation
 ```
 pip install vnpy_sinopac
