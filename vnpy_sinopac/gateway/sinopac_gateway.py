@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Any, Optional
 
-import pandas as pd
+import polars as pl
 import pytz
 import shioaji.constant as sj_constant
 from shioaji.contracts import Contract
@@ -738,11 +738,11 @@ class SinopacGateway(BaseGateway):
 
         if interval == Interval.MINUTE:
             minute_bars = self.api.kbars(sj_contract, start, end)
-            df = pd.DataFrame({**minute_bars})
-            df.ts = pd.to_datetime(df.ts)
-            if df is not None:
-                for ix, row in df.iterrows():
-                    dt = row.ts.to_pydatetime()
+            df = pl.DataFrame({**minute_bars})
+            df = df.with_columns(pl.col("ts").str.strptime(pl.Datetime))
+            if df is not None and len(df) > 0:
+                for row in df.iter_rows(named=True):
+                    dt = row["ts"].to_pydatetime()
                     dt = TW_TZ.localize(dt)
 
                     bar = BarData(
